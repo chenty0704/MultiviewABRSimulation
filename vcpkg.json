@@ -1,0 +1,11 @@
+{
+    "name": "multiview-abr-simulation",
+    "version": "1.0",
+    "description": "A research platform for multiview adaptive bitrate streaming",
+    "homepage": "https://github.com/chenty0704/MultiviewABRSimulation",
+    "dependencies": [
+        {"name": "library-link-utilities"},
+        {"name": "system"}
+    ],
+    "builtin-baseline": "6f29f12e82a8293156836ad81cc9bf5af41fe836"
+}
