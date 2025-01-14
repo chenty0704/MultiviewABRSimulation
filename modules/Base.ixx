@@ -9,8 +9,16 @@ import System.Base;
 
 using namespace std;
 
-/// The number of bits in a byte.
-export inline constexpr int BitCountPerByte = 8;
+/// Represents a value and a time duration.
+/// @tparam T The type of the value.
+export template<typename T>
+struct TimedValue {
+    T Value; ///< A value.
+    double Seconds; ///< A time duration in seconds.
+
+    bool operator==(const TimedValue &) const = default;
+    bool operator!=(const TimedValue &) const = default;
+};
 
 /// Represents a video stream.
 export struct VideoModel {
