@@ -1,21 +1,31 @@
 export module MultiviewABRSimulation.NetworkSimulator;
 
 import System.Base;
+import System.Math;
 
 import MultiviewABRSimulation.Base;
 
 using namespace std;
 
+/// Represents the options for a network simulator.
+export struct NetworkSimulatorOptions {
+    double UnitSeconds = 1 / 30.; /// The unit time in seconds.
+};
+
 /// Simulates download actions under a network series.
 export class NetworkSimulator {
     NetworkSeriesView _networkSeries;
+    double _unitSeconds;
+
     int _intervalID = 0;
     double _secondsInInterval = 0.;
 
 public:
-    /// Creates a network simulator from a network series.
+    /// Creates a network simulator from a network series with the specified options.
     /// @param networkSeries A network series.
-    explicit NetworkSimulator(NetworkSeriesView networkSeries) : _networkSeries(networkSeries) {
+    /// @param options The options for the network simulator.
+    explicit NetworkSimulator(NetworkSeriesView networkSeries, const NetworkSimulatorOptions &options = {}):
+        _networkSeries(networkSeries), _unitSeconds(options.UnitSeconds) {
     }
 
     /// Downloads content with the specified size.
@@ -50,6 +60,9 @@ public:
                 else _secondsInInterval += remSecondsInInterval;
             }
         }
+
+        downloadSeconds = Math::Ceiling(downloadSeconds, _unitSeconds);
+        _secondsInInterval = Math::Ceiling(_secondsInInterval, _unitSeconds);
         return {downloadedMB, downloadSeconds};
     }
 
