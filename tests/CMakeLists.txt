@@ -5,6 +5,12 @@ target_link_libraries(ThroughputPredictorsTest PRIVATE
         GTest::gtest_main
         ThroughputPredictors)
 
+add_executable(ViewPredictorsTest
+        "ViewPredictors/MarkovPredictorTest.cpp")
+target_link_libraries(ViewPredictorsTest PRIVATE
+        GTest::gtest_main
+        ViewPredictors)
+
 add_executable(MultiviewABRSimulationTest
         "NetworkSimulatorTest.cpp")
 target_link_libraries(MultiviewABRSimulationTest PRIVATE
