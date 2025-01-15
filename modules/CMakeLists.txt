@@ -14,6 +14,16 @@ target_link_libraries(ThroughputPredictors PUBLIC
         System::System
         Base)
 
+add_library(ViewPredictors)
+target_sources(ViewPredictors PUBLIC FILE_SET CXX_MODULES FILES
+        "ViewPredictors/IViewPredictor.ixx"
+        "ViewPredictors/MarkovPredictor.ixx"
+        "ViewPredictors/StaticPredictor.ixx"
+        "ViewPredictors/ViewPredictorFactory.ixx")
+target_link_libraries(ViewPredictors PUBLIC
+        System::System
+        Base)
+
 add_library(MultiviewABRSimulation)
 target_sources(MultiviewABRSimulation PUBLIC FILE_SET CXX_MODULES FILES
         "NetworkSimulator.ixx")
