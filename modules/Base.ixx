@@ -20,16 +20,24 @@ struct TimedValue {
     bool operator!=(const TimedValue &) const = default;
 };
 
-/// Represents a video stream.
-export struct VideoModel {
+/// Represents the configuration for a multiview adaptive bitrate streaming session.
+export struct StreamingConfig {
     double SegmentSeconds; ///< The segment duration in seconds.
-    vector<double> BitratesMbps; ///< The available bitrates in megabits per second (in ascending order).
+    vector<double> BitratesMbps; ///< A list of available bitrates in megabits per second (in ascending order).
+    int StreamCount; ///< The total number of streams.
+    double PrimaryViewSize; ///< The relative primary view size.
+    double SecondaryViewSize; ///< The relative secondary view size.
+    double MaxBufferSeconds; ///< The maximum buffer level in seconds.
 };
 
 export {
-    DESCRIBE_STRUCT(VideoModel, (), (
+    DESCRIBE_STRUCT(StreamingConfig, (), (
                         SegmentSeconds,
-                        BitratesMbps
+                        BitratesMbps,
+                        StreamCount,
+                        PrimaryViewSize,
+                        SecondaryViewSize,
+                        MaxBufferSeconds
                     ))
 }
 
