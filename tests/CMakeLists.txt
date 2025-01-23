@@ -11,6 +11,12 @@ target_link_libraries(ViewPredictorsTest PRIVATE
         GTest::gtest_main
         ViewPredictors)
 
+add_executable(MultiviewABRControllersTest
+        "MultiviewABRControllers/ThroughputBasedControllerTest.cpp")
+target_link_libraries(MultiviewABRControllersTest PRIVATE
+        GTest::gtest_main
+        MultiviewABRControllers)
+
 add_executable(MultiviewABRSimulationTest
         "NetworkSimulatorTest.cpp")
 target_link_libraries(MultiviewABRSimulationTest PRIVATE
