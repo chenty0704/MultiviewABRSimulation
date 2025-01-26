@@ -36,7 +36,11 @@ target_link_libraries(MultiviewABRControllers PUBLIC
 
 add_library(MultiviewABRSimulation)
 target_sources(MultiviewABRSimulation PUBLIC FILE_SET CXX_MODULES FILES
+        "MultiviewABRSimulator.ixx"
         "NetworkSimulator.ixx")
 target_link_libraries(MultiviewABRSimulation PUBLIC
         System::System
-        Base)
+        Base
+        MultiviewABRControllers
+        ThroughputPredictors
+        ViewPredictors)
