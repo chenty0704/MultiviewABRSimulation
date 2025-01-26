@@ -18,6 +18,7 @@ target_link_libraries(MultiviewABRControllersTest PRIVATE
         MultiviewABRControllers)
 
 add_executable(MultiviewABRSimulationTest
+        "MultiviewABRSimulatorTest.cpp"
         "NetworkSimulatorTest.cpp")
 target_link_libraries(MultiviewABRSimulationTest PRIVATE
         GTest::gtest_main

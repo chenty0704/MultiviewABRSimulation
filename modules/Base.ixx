@@ -41,10 +41,18 @@ export {
                     ))
 }
 
-/// Represents a constant view of a regular network series.
+/// Represents a constant view of a network series.
 /// The values of a network series represent throughputs in megabits per second.
 export using NetworkSeriesView = LLU::TimeSeriesView<double>;
 
-/// Represents a constant view of a collection of regular network series.
+/// Represents a constant view of a collection of network series.
 /// The values of each network series represent throughputs in megabits per second.
 export using NetworkDataView = LLU::TemporalDataView<double>;
+
+/// Represents a constant view of a primary stream series.
+/// The values of a primary stream series represent primary stream IDs.
+export using PrimaryStreamSeriesView = LLU::TimeSeriesView<int64_t>;
+
+/// Represents a constant view of a collection of primary stream series.
+/// The values of each primary stream series represent primary stream IDs.
+export using PrimaryStreamDataView = LLU::TemporalDataView<int64_t>;
