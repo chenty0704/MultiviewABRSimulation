@@ -20,12 +20,12 @@ TEST(MultiviewABRSimulatorTest, BasicSimulation) {
     const PrimaryStreamSeriesView primaryStreamSeries = {0.1, primaryStreamIDs};
 
     double rebufferingSeconds;
-    mdarray<double, dims<2>> bitratesMbps(4, 4);
-    const SimulationSeriesRef simulationSeries = {rebufferingSeconds, bitratesMbps.to_mdspan()};
+    mdarray<double, dims<2>> bufferedBitratesMbps(4, 4);
+    const SimulationSeriesRef simulationSeries = {rebufferingSeconds, bufferedBitratesMbps.to_mdspan()};
     MultiviewABRSimulator::Simulate(streamingConfig, ThroughputBasedControllerOptions(),
                                     networkSeries, primaryStreamSeries, simulationSeries);
     EXPECT_DOUBLE_EQ(rebufferingSeconds, 0.);
-    EXPECT_EQ(bitratesMbps.container(), vector({
+    EXPECT_EQ(bufferedBitratesMbps.container(), vector({
                   1., 1., 1., 1.,
                   4., 1., 1., 1.,
                   4., 1., 1., 1.,

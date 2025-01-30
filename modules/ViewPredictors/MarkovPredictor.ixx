@@ -33,10 +33,12 @@ export class MarkovPredictor : public BaseViewPredictor {
 
 public:
     /// Creates a Markov predictor with the specified configuration and options.
-    /// @param config The configuration for the Markov predictor.
+    /// @param streamCount The total number of streams.
+    /// @param intervalSeconds The interval between two samples in seconds.
     /// @param options The options for the Markov predictor.
-    explicit MarkovPredictor(const ViewPredictorConfig &config, const MarkovPredictorOptions &options = {}) :
-        BaseViewPredictor(config, options), _windowSeconds(options.WindowSeconds), _transitionCounts(_streamCount) {
+    MarkovPredictor(int streamCount, double intervalSeconds, const MarkovPredictorOptions &options = {}) :
+        BaseViewPredictor(streamCount, intervalSeconds, options),
+        _windowSeconds(options.WindowSeconds), _transitionCounts(_streamCount) {
     }
 
     void Update(span<const int64_t> primaryStreamIDs) override {
@@ -55,7 +57,7 @@ public:
     }
 
     [[nodiscard]] mdarray<double, dims<2>>
-    PredictPrimaryStreamDistributions(double offsetSeconds, int groupCount) const override {
+    PredictPrimaryStreamDistributions(double offsetSeconds, int groupCount, double segmentSeconds) const override {
         const auto prevPrimaryStreamID = _primaryStreamIDs.back();
         const auto rates = _transitionCounts |
             views::transform([&](int count) { return count / _windowSeconds; }) | ranges::to<vector>();
@@ -65,10 +67,10 @@ public:
         mdarray<double, dims<2>> distributions(groupCount, _streamCount);
         const auto relRates = rates / totalRate;
         const auto expValues = views::iota(0, groupCount + 1) | views::transform([&](int groupID) {
-            return Math::Exp(-totalRate * (offsetSeconds + groupID * _segmentSeconds));
+            return Math::Exp(-totalRate * (offsetSeconds + groupID * segmentSeconds));
         }) | ranges::to<vector>();
         for (auto groupID = 0; groupID < groupCount; ++groupID) {
-            const auto diffValue = (expValues[groupID] - expValues[groupID + 1]) / (totalRate * _segmentSeconds);
+            const auto diffValue = (expValues[groupID] - expValues[groupID + 1]) / (totalRate * segmentSeconds);
             for (auto streamID = 0; streamID < _streamCount; ++streamID)
                 distributions[groupID, streamID] =
                     streamID != prevPrimaryStreamID

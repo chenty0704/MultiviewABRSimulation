@@ -12,8 +12,8 @@ TEST(NetworkSimulatorTest, BasicSimulation) {
     const NetworkSeriesView networkSeries = {1., throughputsMbps};
     NetworkSimulator simulator(networkSeries);
 
-    EXPECT_DOUBLE_EQ(simulator.Download(0.5), 0.5);
-    EXPECT_DOUBLE_EQ(simulator.Download(2.5), 1.);
+    EXPECT_DOUBLE_EQ(simulator.Download(0.5).Seconds, 0.5);
+    EXPECT_DOUBLE_EQ(simulator.Download(2.5).Seconds, 1.);
     simulator.WaitFor(1.);
     EXPECT_EQ(simulator.Download(4., 1.), (TimedValue{2.5, 1.}));
     EXPECT_EQ(simulator.Download(1.5, 2.), (TimedValue{1.5, 1.}));

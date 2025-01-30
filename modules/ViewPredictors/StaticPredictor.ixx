@@ -26,10 +26,11 @@ export class StaticPredictor : public BaseViewPredictor {
 
 public:
     /// Creates a static predictor with the specified configuration and options.
-    /// @param config The configuration for the static predictor.
+    /// @param streamCount The total number of streams.
+    /// @param intervalSeconds The interval between two samples in seconds.
     /// @param options The options for the static predictor.
-    explicit StaticPredictor(const ViewPredictorConfig &config, const StaticPredictorOptions &options = {}) :
-        BaseViewPredictor(config, options) {
+    StaticPredictor(int streamCount, double intervalSeconds, const StaticPredictorOptions &options = {}) :
+        BaseViewPredictor(streamCount, intervalSeconds, options) {
     }
 
     void Update(span<const int64_t> primaryStreamIDs) override {
@@ -37,7 +38,7 @@ public:
     }
 
     [[nodiscard]] mdarray<double, dims<2>>
-    PredictPrimaryStreamDistributions(double, int groupCount) const override {
+    PredictPrimaryStreamDistributions(double, int groupCount, double) const override {
         return PredictStaticDistributions(groupCount, _prevPrimaryStreamID);
     }
 };

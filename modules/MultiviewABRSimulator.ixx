@@ -22,25 +22,25 @@ using namespace experimental;
 /// Refers to a simulation series.
 export struct SimulationSeriesRef {
     double &RebufferingSeconds; ///< The total rebuffering duration in seconds.
-    mdspan<double, dims<2>> BitratesMbps; ///< A 2D array of bitrates in megabits per second.
+    mdspan<double, dims<2>> BufferedBitratesMbps; ///< A 2D array of buffered bitrates in megabits per second.
 };
 
 /// Refers to a collection of simulation series.
 export struct SimulationDataRef {
     span<double> RebufferingSeconds; ///< A list of total rebuffering durations in seconds.
-    mdspan<double, dims<3>> BitratesMbps; ///< A 3D array of bitrates in megabits per second.
+    mdspan<double, dims<3>> BufferedBitratesMbps; ///< A 3D array of buffered bitrates in megabits per second.
 
     /// Returns the path at the specified index.
     /// @param index The index of the path.
     /// @returns The path at the specified index.
     [[nodiscard]] SimulationSeriesRef operator[](int index) const {
-        const auto bitratesMBps = submdspan(BitratesMbps, index, full_extent, full_extent);
+        const auto bitratesMBps = submdspan(BufferedBitratesMbps, index, full_extent, full_extent);
         return {RebufferingSeconds[index], bitratesMBps};
     }
 };
 
-/// Represents the options for the multiview adaptive bitrate simulator.
-export struct SimulationOptions {
+/// Represents the options for multiview adaptive bitrate streaming simulation.
+export struct MultiviewABRSimulationOptions {
     /// The options for the throughput predictor.
     const BaseThroughputPredictorOptions &ThroughputPredictorOptions = EMAPredictorOptions();
     /// The options for the view predictor.
@@ -62,7 +62,7 @@ public:
                          NetworkSeriesView networkSeries,
                          PrimaryStreamSeriesView primaryStreamSeries,
                          SimulationSeriesRef out,
-                         const SimulationOptions &options = {}) {
+                         const MultiviewABRSimulationOptions &options = {}) {
         const auto segmentSeconds = streamingConfig.SegmentSeconds;
         const auto bitratesMbps = streamingConfig.BitratesMbps;
         const auto groupCount = Math::Round(primaryStreamSeries.DurationSeconds() / segmentSeconds);
@@ -71,10 +71,8 @@ public:
         const auto unitSeconds = primaryStreamSeries.IntervalSeconds;
 
         const auto throughputPredictor = ThroughputPredictorFactory::Create(options.ThroughputPredictorOptions);
-        const auto viewPredictor = ViewPredictorFactory::Create(
-            {streamCount, unitSeconds, segmentSeconds}, options.ViewPredictorOptions);
-        const auto controller = MultiviewABRControllerFactory::Create(
-            {streamingConfig, *viewPredictor}, controllerOptions);
+        const auto viewPredictor = ViewPredictorFactory::Create(streamCount, unitSeconds, options.ViewPredictorOptions);
+        const auto controller = MultiviewABRControllerFactory::Create(streamingConfig, controllerOptions);
         NetworkSimulator networkSimulator(networkSeries, {unitSeconds});
 
         auto beginGroupID = 0, endGroupID = 0;
@@ -117,7 +115,7 @@ public:
             const auto _bufferedBitrateIDs = submdspan(bufferedBitrateIDs.to_mdspan(),
                                                        pair(beginGroupID + 1, endGroupID), full_extent);
             const MultiviewABRControllerContext context =
-                {throughputPredictor->PredictThroughputMbps(), bufferSeconds, _bufferedBitrateIDs};
+                {throughputPredictor->PredictThroughputMbps(), bufferSeconds, _bufferedBitrateIDs, *viewPredictor};
             const auto action = controller->GetControlAction(context);
             const auto groupID = beginGroupID + action.GroupID + static_cast<int>(endGroupID > beginGroupID);
 
@@ -141,7 +139,7 @@ public:
         PlayVideo(bufferSeconds);
 
         out.RebufferingSeconds = rebufferingSeconds;
-        ranges::transform(bufferedBitrateIDs.container(), out.BitratesMbps.data_handle(),
+        ranges::transform(bufferedBitrateIDs.container(), out.BufferedBitratesMbps.data_handle(),
                           [&](int bitrateID) { return bitratesMbps[bitrateID]; });
     }
 
@@ -157,7 +155,7 @@ public:
                          NetworkDataView networkData,
                          PrimaryStreamDataView primaryStreamData,
                          SimulationDataRef out,
-                         const SimulationOptions &options = {}) {
+                         const MultiviewABRSimulationOptions &options = {}) {
         Parallel::For(0, primaryStreamData.PathCount(), [&](int i) {
             Simulate(streamingConfig, controllerOptions, networkData[i], primaryStreamData[i], out[i], options);
         });

@@ -71,15 +71,16 @@ int MultiviewABRSimulate(WolframLibraryData, int64_t argc, MArgument *args, MArg
         const auto groupCount = Math::Round(primaryStreamData.DurationSeconds() / streamingConfig.SegmentSeconds);
         const auto streamCount = streamingConfig.StreamCount;
         LLU::Tensor rebufferingSeconds(0., {sessionCount});
-        LLU::Tensor bitratesMbps(0., {sessionCount, groupCount, streamCount});
-        const SimulationDataRef simulationData = {rebufferingSeconds, LLU::ToMDSpan<double, dims<3>>(bitratesMbps)};
+        LLU::Tensor bufferedBitratesMbps(0., {sessionCount, groupCount, streamCount});
+        const SimulationDataRef simulationData =
+            {rebufferingSeconds, LLU::ToMDSpan<double, dims<3>>(bufferedBitratesMbps)};
         MultiviewABRSimulator::Simulate(streamingConfig, *controllerOptions,
                                         networkData, primaryStreamData, simulationData,
                                         {*throughputPredictorOptions, *viewPredictorOptions});
 
         LLU::DataList<LLU::NodeType::Any> _out;
         _out.push_back("RebufferingSeconds", move(rebufferingSeconds));
-        _out.push_back("BitratesMbps", move(bitratesMbps));
+        _out.push_back("BufferedBitratesMbps", move(bufferedBitratesMbps));
         argQueue.SetOutput(_out);
     });
 }

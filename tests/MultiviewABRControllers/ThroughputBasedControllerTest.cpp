@@ -11,9 +11,9 @@ using namespace std;
 
 TEST(ThroughputBasedControllerTest, BasicControl) {
     const StreamingConfig streamingConfig = {1., {1., 2., 4., 8.}, 4, 0.75, 5.};
-    StaticPredictor predictor({4, 1., 2.});
-    const ThroughputBasedController controller({streamingConfig, predictor});
-    MultiviewABRControllerContext context;
+    const StaticPredictor predictor(4, 1.);
+    const ThroughputBasedController controller(streamingConfig);
+    MultiviewABRControllerContext context = {.ViewPredictor = predictor};
 
     context.ThroughputMbps = 2.;
     EXPECT_EQ(controller.GetControlAction(context).BitrateIDs, vector({0, 0, 0, 0}));
