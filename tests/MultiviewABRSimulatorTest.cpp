@@ -13,7 +13,7 @@ using namespace std;
 using namespace experimental;
 
 TEST(MultiviewABRSimulatorTest, BasicSimulation) {
-    const StreamingConfig streamingConfig = {1., {1., 2., 4., 8.}, 4, 0.75, 0.083, 5.};
+    const StreamingConfig streamingConfig = {1., {1., 2., 4., 8.}, 4, 0.75, 5.};
     const vector throughputsMbps = {8., 32., 24., 16.};
     const NetworkSeriesView networkSeries = {1., throughputsMbps};
     const vector<int64_t> primaryStreamIDs(40);

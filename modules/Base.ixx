@@ -25,8 +25,7 @@ export struct StreamingConfig {
     double SegmentSeconds; ///< The segment duration in seconds.
     vector<double> BitratesMbps; ///< A list of available bitrates in megabits per second (in ascending order).
     int StreamCount; ///< The total number of streams.
-    double PrimaryViewSize; ///< The relative primary view size.
-    double SecondaryViewSize; ///< The relative secondary view size.
+    double PrimaryViewSize; ///< The primary view size (normalized by the screen size).
     double MaxBufferSeconds; ///< The maximum buffer level in seconds.
 };
 
@@ -36,7 +35,6 @@ export {
                         BitratesMbps,
                         StreamCount,
                         PrimaryViewSize,
-                        SecondaryViewSize,
                         MaxBufferSeconds
                     ))
 }

@@ -78,7 +78,7 @@ protected:
         _bitratesMbps = streamingConfig.BitratesMbps;
         _streamCount = streamingConfig.StreamCount;
         _primaryViewSize = streamingConfig.PrimaryViewSize;
-        _secondaryViewSize = streamingConfig.SecondaryViewSize;
+        _secondaryViewSize = (1 - _primaryViewSize) / (_streamCount - 1);
         _maxBufferSeconds = streamingConfig.MaxBufferSeconds;
 
         const auto minBitrateMbps = _bitratesMbps.front(), maxBitrateMbps = _bitratesMbps.back();
