@@ -6,6 +6,7 @@ export module MultiviewABRSimulation.MultiviewABRControllers.ThroughputBasedCont
 
 import System.Base;
 
+import MultiviewABRSimulation.Base;
 import MultiviewABRSimulation.MultiviewABRControllers.IMultiviewABRController;
 
 using namespace std;
@@ -22,16 +23,17 @@ export {
 export class ThroughputBasedController : public BaseMultiviewABRController {
 public:
     /// Creates a throughput-based controller with the specified configuration and options.
-    /// @param config The configuration for the throughput-based controller.
+    /// @param streamingConfig The adaptive bitrate streaming configuration.
     /// @param options The options for the throughput-based controller.
-    explicit ThroughputBasedController(const MultiviewABRControllerConfig &config,
+    explicit ThroughputBasedController(const StreamingConfig &streamingConfig,
                                        const ThroughputBasedControllerOptions &options = {}) :
-        BaseMultiviewABRController(config, options) {
+        BaseMultiviewABRController(streamingConfig, options) {
     }
 
     [[nodiscard]] ControlAction GetControlAction(const MultiviewABRControllerContext &context) const override {
         const auto throughputMbps = context.ThroughputMbps * _throughputDiscount;
-        const auto distribution = _viewPredictor.get().PredictPrimaryStreamDistribution(context.BufferSeconds);
+        const auto distribution = context.ViewPredictor.PredictPrimaryStreamDistribution(
+            context.BufferSeconds, _segmentSeconds);
 
         vector<int> bitrateIDs(_streamCount);
         auto totalBitrateMbps = _bitratesMbps.front() * _streamCount;

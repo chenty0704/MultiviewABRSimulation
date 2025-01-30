@@ -14,12 +14,6 @@ import MultiviewABRSimulation.ViewPredictors.IViewPredictor;
 using namespace std;
 using namespace experimental;
 
-/// Represents the configuration for a multiview adaptive bitrate controller.
-export struct MultiviewABRControllerConfig {
-    const StreamingConfig &StreamingConfig; ///< The adaptive bitrate streaming configuration.
-    const IViewPredictor &ViewPredictor; ///< A view predictor.
-};
-
 /// Represents the base options for a multiview adaptive bitrate controller.
 export struct BaseMultiviewABRControllerOptions {
     double ThroughputDiscount = 1.; ///< The discount factor for predicted throughputs.
@@ -38,6 +32,7 @@ export struct MultiviewABRControllerContext {
     double ThroughputMbps; ///< The predicted throughput in megabits per second.
     double BufferSeconds; ///< The buffer level in seconds.
     mdspan<const int, dims<2>> BufferedBitrateIDs; ///< The bitrate IDs of buffered segments.
+    const IViewPredictor &ViewPredictor; ///< The view predictor.
 };
 
 /// Represents a control action.
@@ -65,22 +60,16 @@ protected:
     int _streamCount;
     double _primaryViewSize, _secondaryViewSize;
     double _maxBufferSeconds;
-    reference_wrapper<const IViewPredictor> _viewPredictor;
     double _throughputDiscount;
 
     vector<double> _weightedPrimaryUtilities, _weightedSecondaryUtilities;
 
-    explicit BaseMultiviewABRController(const MultiviewABRControllerConfig &config,
+    explicit BaseMultiviewABRController(const StreamingConfig &streamingConfig,
                                         const BaseMultiviewABRControllerOptions &options = {}) :
-        _viewPredictor(config.ViewPredictor), _throughputDiscount(options.ThroughputDiscount) {
-        const auto &streamingConfig = config.StreamingConfig;
-        _segmentSeconds = streamingConfig.SegmentSeconds;
-        _bitratesMbps = streamingConfig.BitratesMbps;
-        _streamCount = streamingConfig.StreamCount;
-        _primaryViewSize = streamingConfig.PrimaryViewSize;
-        _secondaryViewSize = (1 - _primaryViewSize) / (_streamCount - 1);
-        _maxBufferSeconds = streamingConfig.MaxBufferSeconds;
-
+        _segmentSeconds(streamingConfig.SegmentSeconds), _bitratesMbps(streamingConfig.BitratesMbps),
+        _streamCount(streamingConfig.StreamCount), _primaryViewSize(streamingConfig.PrimaryViewSize),
+        _secondaryViewSize((1 - _primaryViewSize) / (_streamCount - 1)),
+        _maxBufferSeconds(streamingConfig.MaxBufferSeconds), _throughputDiscount(options.ThroughputDiscount) {
         const auto minBitrateMbps = _bitratesMbps.front(), maxBitrateMbps = _bitratesMbps.back();
         const auto utilityNormalizer = Math::Log(maxBitrateMbps / minBitrateMbps);
         const auto PrimaryUtility =

@@ -28,18 +28,11 @@ public:
         _networkSeries(networkSeries), _unitSeconds(options.UnitSeconds) {
     }
 
-    /// Downloads content with the specified size.
-    /// @param sizeMB The content size in megabytes.
-    /// @returns The download time in seconds.
-    double Download(double sizeMB) {
-        return Download(sizeMB, numeric_limits<double>::infinity()).Seconds;
-    }
-
     /// Downloads content with the specified size until a timeout.
     /// @param sizeMB The content size in megabytes.
     /// @param timeoutSeconds The timeout in seconds.
     /// @returns The downloaded size in megabytes and the download time in seconds.
-    TimedValue<double> Download(double sizeMB, double timeoutSeconds) {
+    TimedValue<double> Download(double sizeMB, double timeoutSeconds = numeric_limits<double>::infinity()) {
         const auto [intervalSeconds, throughputsMbps] = _networkSeries;
         const auto intervalCount = static_cast<int>(throughputsMbps.size());
 
