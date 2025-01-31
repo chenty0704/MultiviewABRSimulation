@@ -72,8 +72,12 @@ int MultiviewABRSimulate(WolframLibraryData, int64_t argc, MArgument *args, MArg
         const auto streamCount = streamingConfig.StreamCount;
         LLU::Tensor rebufferingSeconds(0., {sessionCount});
         LLU::Tensor bufferedBitratesMbps(0., {sessionCount, groupCount, streamCount});
-        const SimulationDataRef simulationData =
-            {rebufferingSeconds, LLU::ToMDSpan<double, dims<3>>(bufferedBitratesMbps)};
+        LLU::Tensor primaryStreamDistributions(0., {sessionCount, groupCount, streamCount});
+        LLU::Tensor downloadedMB(0., {sessionCount}), rawWastedMB(0., {sessionCount});
+        const SimulationDataRef simulationData = {
+            rebufferingSeconds, LLU::ToMDSpan<double, dims<3>>(bufferedBitratesMbps),
+            LLU::ToMDSpan<double, dims<3>>(primaryStreamDistributions), downloadedMB, rawWastedMB
+        };
         MultiviewABRSimulator::Simulate(streamingConfig, *controllerOptions,
                                         networkData, primaryStreamData, simulationData,
                                         {*throughputPredictorOptions, *viewPredictorOptions});
@@ -81,6 +85,9 @@ int MultiviewABRSimulate(WolframLibraryData, int64_t argc, MArgument *args, MArg
         LLU::DataList<LLU::NodeType::Any> _out;
         _out.push_back("RebufferingSeconds", move(rebufferingSeconds));
         _out.push_back("BufferedBitratesMbps", move(bufferedBitratesMbps));
+        _out.push_back("PrimaryStreamDistributions", move(primaryStreamDistributions));
+        _out.push_back("DownloadedMB", move(downloadedMB));
+        _out.push_back("RawWastedMB", move(rawWastedMB));
         argQueue.SetOutput(_out);
     });
 }
