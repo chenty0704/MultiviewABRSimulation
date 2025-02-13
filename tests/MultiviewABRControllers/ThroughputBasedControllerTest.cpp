@@ -13,10 +13,10 @@ TEST(ThroughputBasedControllerTest, BasicControl) {
     const StreamingConfig streamingConfig = {1., {1., 2., 4., 8.}, 4, 0.75, 5.};
     const StaticPredictor predictor(4, 1.);
     const ThroughputBasedController controller(streamingConfig);
-    MultiviewABRControllerContext context = {.ViewPredictor = predictor};
 
-    context.ThroughputMbps = 2.;
-    EXPECT_EQ(controller.GetControlAction(context).BitrateIDs, vector({0, 0, 0, 0}));
+    MultiviewABRControllerContext context = {.ViewPredictor = predictor};
+    context.ThroughputMbps = 5.;
+    EXPECT_EQ(controller.GetControlAction(context).BitrateIDs, vector({1, 0, 0, 0}));
 
     context.ThroughputMbps = 15.;
     EXPECT_EQ(controller.GetControlAction(context).BitrateIDs, vector({3, 0, 0, 0}));

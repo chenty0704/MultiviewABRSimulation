@@ -8,6 +8,7 @@ import System.Base;
 
 import MultiviewABRSimulation.Base;
 import MultiviewABRSimulation.MultiviewABRControllers.IMultiviewABRController;
+import MultiviewABRSimulation.MultiviewABRControllers.ModelPredictiveController;
 import MultiviewABRSimulation.MultiviewABRControllers.ThroughputBasedController;
 
 using namespace std;
@@ -26,6 +27,7 @@ public:
     [[nodiscard]] static unique_ptr<IMultiviewABRController> Create(const StreamingConfig &streamingConfig,
                                                                     const BaseMultiviewABRControllerOptions &options) {
         FOR_EACH(TRY_CREATE, (
+                     ModelPredictiveController,
                      ThroughputBasedController
                  ))
         throw runtime_error("Unknown multiview adaptive bitrate controller options.");

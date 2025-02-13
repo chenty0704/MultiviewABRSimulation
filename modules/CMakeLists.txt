@@ -27,6 +27,7 @@ target_link_libraries(ViewPredictors PUBLIC
 add_library(MultiviewABRControllers)
 target_sources(MultiviewABRControllers PUBLIC FILE_SET CXX_MODULES FILES
         "MultiviewABRControllers/IMultiviewABRController.ixx"
+        "MultiviewABRControllers/ModelPredictiveController.ixx"
         "MultiviewABRControllers/MultiviewABRControllerFactory.ixx"
         "MultiviewABRControllers/ThroughputBasedController.ixx")
 target_link_libraries(MultiviewABRControllers PUBLIC
