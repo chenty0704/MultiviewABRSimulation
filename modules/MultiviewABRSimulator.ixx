@@ -77,13 +77,12 @@ public:
         const auto groupCount = Math::Round(primaryStreamSeries.DurationSeconds() / segmentSeconds);
         const auto streamCount = streamingConfig.StreamCount;
         const auto maxBufferSeconds = streamingConfig.MaxBufferSeconds;
-        const auto intervalSeconds = primaryStreamSeries.IntervalSeconds;
 
         const auto throughputPredictor = ThroughputPredictorFactory::Create(options.ThroughputPredictorOptions);
-        const auto viewPredictor = ViewPredictorFactory::Create(streamCount, intervalSeconds,
-                                                                options.ViewPredictorOptions);
+        const auto viewPredictor = ViewPredictorFactory::Create(
+            streamCount, primaryStreamSeries.IntervalSeconds, options.ViewPredictorOptions);
         const auto controller = MultiviewABRControllerFactory::Create(streamingConfig, controllerOptions);
-        NetworkSimulator networkSimulator(networkSeries, {intervalSeconds});
+        NetworkSimulator networkSimulator(networkSeries);
 
         auto beginGroupID = 0, endGroupID = 0;
         auto secondsInGroup = 0.;
@@ -93,7 +92,7 @@ public:
         out.DownloadedMB = 0., out.RawWastedMB = 0.;
 
         // Computes the primary stream distributions.
-        const auto intervalCountPerSegment = Math::Round(segmentSeconds / intervalSeconds);
+        const auto intervalCountPerSegment = Math::Round(segmentSeconds / primaryStreamSeries.IntervalSeconds);
         for (auto groupID = 0; groupID < groupCount; ++groupID) {
             const auto primaryStreamIDs = primaryStreamSeries.Window(groupID * segmentSeconds, segmentSeconds).Values;
             for (auto primaryStreamID : primaryStreamIDs)
@@ -131,7 +130,8 @@ public:
 
         const auto PlayVideo = [&](double seconds) {
             const auto currentSeconds = beginGroupID * segmentSeconds + secondsInGroup;
-            viewPredictor->Update(primaryStreamSeries.Window(currentSeconds, seconds).Values);
+            const auto primaryStreamIDs = primaryStreamSeries.Window(currentSeconds, seconds).Values;
+            if (!primaryStreamIDs.empty()) viewPredictor->Update(primaryStreamIDs);
 
             beginGroupID += Math::Floor(seconds / segmentSeconds);
             secondsInGroup += fmod(seconds, segmentSeconds);
