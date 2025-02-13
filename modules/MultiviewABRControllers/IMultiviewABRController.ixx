@@ -82,5 +82,18 @@ protected:
             const auto scaledBitrateMbps = min(_primaryViewSize * bitrateMbps / _secondaryViewSize, maxBitrateMbps);
             return _secondaryViewSize * PrimaryUtility(scaledBitrateMbps);
         }) | ranges::to<vector>();
+        _weightedPrimaryUtilities *= _segmentSeconds, _weightedSecondaryUtilities *= _segmentSeconds;
+    }
+
+    [[nodiscard]] int GetBitrateIDBelow(double bitrateMbps) const {
+        const auto it = ranges::upper_bound(_bitratesMbps, bitrateMbps);
+        return it != _bitratesMbps.cbegin() ? static_cast<int>(it - _bitratesMbps.cbegin()) - 1 : 0;
+    }
+
+    [[nodiscard]] int GetBitrateIDAbove(double bitrateMbps) const {
+        const auto it = ranges::lower_bound(_bitratesMbps, bitrateMbps);
+        return it != _bitratesMbps.cend()
+                   ? static_cast<int>(it - _bitratesMbps.cbegin())
+                   : static_cast<int>(_bitratesMbps.size()) - 1;
     }
 };

@@ -10,6 +10,7 @@ import System.MDArray;
 
 import MultiviewABRSimulation.Base;
 import MultiviewABRSimulation.MultiviewABRControllers.IMultiviewABRController;
+import MultiviewABRSimulation.MultiviewABRControllers.ModelPredictiveController;
 import MultiviewABRSimulation.MultiviewABRControllers.ThroughputBasedController;
 import MultiviewABRSimulation.MultiviewABRSimulator;
 import MultiviewABRSimulation.ThroughputPredictors.EMAPredictor;
@@ -37,6 +38,7 @@ LLU_GENERATE_ABSTRACT_STRUCT_GETTER(BaseViewPredictorOptions, (
                                     ))
 
 LLU_GENERATE_ABSTRACT_STRUCT_GETTER(BaseMultiviewABRControllerOptions, (
+                                        ModelPredictiveControllerOptions,
                                         ThroughputBasedControllerOptions
                                     ))
 

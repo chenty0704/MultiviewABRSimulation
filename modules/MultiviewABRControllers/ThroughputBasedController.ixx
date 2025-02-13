@@ -19,7 +19,7 @@ export {
     DESCRIBE_STRUCT(ThroughputBasedControllerOptions, (BaseMultiviewABRControllerOptions), ())
 }
 
-/// A throughput-based controller makes bitrate decisions by optimizing the multiview utility subject to throughput constraint.
+/// A throughput-based controller decides bitrates by optimizing the multiview utility subject to throughput constraint.
 export class ThroughputBasedController : public BaseMultiviewABRController {
 public:
     /// Creates a throughput-based controller with the specified configuration and options.
@@ -41,8 +41,8 @@ public:
             return GetDerivative(bitrateIDs[streamID], distribution[streamID]);
         }) | ranges::to<vector>();
         while (true) {
-            const auto streamID = static_cast<int>(distance(derivatives.begin(), ranges::max_element(derivatives)));
-            if (bitrateIDs[streamID] == _bitratesMbps.size() - 1) break;
+            const auto streamID = static_cast<int>(ranges::max_element(derivatives) - derivatives.cbegin());
+            if (derivatives[streamID] == 0.) break;
 
             totalBitrateMbps += _bitratesMbps[bitrateIDs[streamID] + 1] - _bitratesMbps[bitrateIDs[streamID]];
             if (totalBitrateMbps > throughputMbps) break;
