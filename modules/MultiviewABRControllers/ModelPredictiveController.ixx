@@ -18,7 +18,8 @@ using namespace experimental;
 export struct ModelPredictiveControllerOptions : BaseMultiviewABRControllerOptions {
     int WindowLength = 4; ///< The number of segment groups in the optimization window.
     double TargetBufferRatio = 1.; ///< The target buffer level (normalized by the maximum buffer level).
-    double BufferCostWeight = 1.; ///< The weight of buffer cost.
+    double BufferCostWeight = 2.; ///< The weight of buffer cost.
+    double SwitchingCostWeight = 1.; ///< The weight of switching cost.
     bool AllowUpgrades = true; ///< Whether the allow segment upgrades.
 };
 
@@ -27,6 +28,7 @@ export {
                         WindowLength,
                         TargetBufferRatio,
                         BufferCostWeight,
+                        SwitchingCostWeight,
                         AllowUpgrades
                     ))
 }
@@ -35,7 +37,7 @@ export {
 export class ModelPredictiveController : public BaseMultiviewABRController {
     int _windowLength;
     double _targetBufferSeconds;
-    double _bufferCostWeight;
+    double _bufferCostWeight, _switchingCostWeight;
     bool _allowUpgrades;
 
 public:
@@ -46,7 +48,8 @@ public:
                                        const ModelPredictiveControllerOptions &options = {}) :
         BaseMultiviewABRController(streamingConfig, options), _windowLength(options.WindowLength),
         _targetBufferSeconds(options.TargetBufferRatio * _maxBufferSeconds),
-        _bufferCostWeight(options.BufferCostWeight), _allowUpgrades(options.AllowUpgrades) {
+        _bufferCostWeight(options.BufferCostWeight), _switchingCostWeight(options.SwitchingCostWeight),
+        _allowUpgrades(options.AllowUpgrades) {
     }
 
     [[nodiscard]] ControlAction GetControlAction(const MultiviewABRControllerContext &context) const override {
@@ -62,6 +65,7 @@ private:
 
     [[nodiscard]] vector<int> GetBitrateIDsWithoutUpgrades(const MultiviewABRControllerContext &context) const {
         const auto throughputMbps = context.ThroughputMbps * _throughputDiscount;
+        const auto lastPrimaryBitrateID = ranges::max(context.LastBitrateIDs);
         const auto distributions = context.ViewPredictor.PredictPrimaryStreamDistributions(
             context.BufferSeconds, _windowLength, _segmentSeconds);
 
@@ -97,6 +101,7 @@ private:
                     }), plus());
             }
         }
+        multiviewUtilities.container() *= _segmentSeconds;
 
         // The (i, j)-th element represents the total download time of the (i, j)-th bitrate set.
         mdarray<double, dims<2>> downloadSeconds(_windowLength, _bitratesMbps.size());
@@ -109,24 +114,44 @@ private:
                     }), plus()) * _segmentSeconds / throughputMbps;
             }
 
-        const auto Objective = [&](int groupID, int primaryBitrateID, double bufferSeconds) {
-            return multiviewUtilities[groupID, primaryBitrateID] - _bufferCostWeight * BufferCost(bufferSeconds);
+        const auto SwitchingCost = [&](int groupID, int prevPrimaryBitrateID, int primaryBitrateID) {
+            const span distribution(&distributions[groupID, 0], _streamCount);
+            const auto primaryStreamID = static_cast<int>(ranges::max_element(distribution) - distribution.cbegin());
+            const auto prevBitrateIDSet = groupID > 0
+                                              ? span(&bitrateIDSets[groupID - 1, prevPrimaryBitrateID, 0], _streamCount)
+                                              : context.LastBitrateIDs;
+            const span bitrateIDSet(&bitrateIDSets[groupID, primaryBitrateID, 0], _streamCount);
+            return *ranges::fold_left_first(views::iota(0, _streamCount) | views::transform([&](int streamID) {
+                const auto prevBitrateID = prevBitrateIDSet[streamID], bitrateID = bitrateIDSet[streamID];
+                return Math::Abs(
+                    streamID == primaryStreamID
+                        ? _weightedPrimaryUtilities[prevBitrateID] - _weightedPrimaryUtilities[bitrateID]
+                        : _weightedSecondaryUtilities[prevBitrateID] - _weightedSecondaryUtilities[bitrateID]);
+            }), plus()) * distribution[primaryStreamID];
         };
 
-        const function<pair<optional<int>, double>(int, double, int)> GetOptPrimaryBitrateIDAndObjective =
-            [&](int groupID, double bufferSeconds, int prevPrimaryBitrateID) {
+        const auto Objective = [&](int groupID, int primaryBitrateID, double bufferSeconds, int prevPrimaryBitrateID) {
+            return multiviewUtilities[groupID, primaryBitrateID] - _bufferCostWeight * BufferCost(bufferSeconds)
+                - _switchingCostWeight * SwitchingCost(groupID, prevPrimaryBitrateID, primaryBitrateID);
+        };
+
+        const function<pair<optional<int>, double>(int, double, int, bool)> GetOptPrimaryBitrateIDAndObjective =
+            [&](int groupID, double bufferSeconds, int prevPrimaryBitrateID, bool ascending) {
+            const auto endPrimaryBitrateID = ascending ? _bitratesMbps.size() : -1;
+            const auto step = ascending ? 1 : -1;
+
             optional<int> optPrimaryBitrateID;
             auto optObjective = -numeric_limits<double>::infinity();
             for (auto primaryBitrateID = prevPrimaryBitrateID;
-                 primaryBitrateID < _bitratesMbps.size(); ++primaryBitrateID) {
+                 primaryBitrateID != endPrimaryBitrateID; primaryBitrateID += step) {
                 bufferSeconds -= downloadSeconds[groupID, primaryBitrateID];
                 if (bufferSeconds < 0) continue;
 
-                auto objective = Objective(groupID, primaryBitrateID, bufferSeconds);
+                auto objective = Objective(groupID, primaryBitrateID, bufferSeconds, prevPrimaryBitrateID);
                 bufferSeconds = min(bufferSeconds + _segmentSeconds, _maxBufferSeconds);
                 if (groupID < _windowLength - 1) {
                     const auto [optNextPrimaryBitrateID, optFutureObjective]
-                        = GetOptPrimaryBitrateIDAndObjective(groupID + 1, bufferSeconds, primaryBitrateID);
+                        = GetOptPrimaryBitrateIDAndObjective(groupID + 1, bufferSeconds, primaryBitrateID, ascending);
                     if (!optNextPrimaryBitrateID) continue;
                     objective += optFutureObjective;
                 }
@@ -135,9 +160,16 @@ private:
             return pair(optPrimaryBitrateID, optObjective);
         };
 
-        const auto optPrimaryBitrateID = GetOptPrimaryBitrateIDAndObjective(0, context.BufferSeconds, 0).first;
-        if (!optPrimaryBitrateID) return vector(_streamCount, 0);
-        return {from_range, span(&bitrateIDSets[0, *optPrimaryBitrateID, 0], _streamCount)};
+        const auto [optPrimaryBitrateID0, optObjective0] =
+            GetOptPrimaryBitrateIDAndObjective(0, context.BufferSeconds, lastPrimaryBitrateID, false);
+        if (!optPrimaryBitrateID0) return vector(_streamCount, 0);
+        const auto [optPrimaryBitrateID1, optObjective1] =
+            GetOptPrimaryBitrateIDAndObjective(0, context.BufferSeconds, lastPrimaryBitrateID, true);
+        const auto optPrimaryBitrateID =
+            optPrimaryBitrateID1
+                ? (optObjective0 < optObjective1 ? *optPrimaryBitrateID1 : *optPrimaryBitrateID0)
+                : *optPrimaryBitrateID0;
+        return {from_range, span(&bitrateIDSets[0, optPrimaryBitrateID, 0], _streamCount)};
     }
 
     [[nodiscard]] double BufferCost(double bufferSeconds) const {

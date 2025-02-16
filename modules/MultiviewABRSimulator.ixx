@@ -144,10 +144,13 @@ public:
         // Downloads the remaining segment groups.
         while (beginGroupID < groupCount) {
             const auto bufferSeconds = (endGroupID - beginGroupID) * segmentSeconds - secondsInGroup;
+            const span lastBitrateIDs(&bufferedBitrateIDs[endGroupID - 1, 0], streamCount);
             const auto _bufferedBitrateIDs = submdspan(bufferedBitrateIDs.to_mdspan(),
                                                        pair(beginGroupID + 1, endGroupID), full_extent);
-            const MultiviewABRControllerContext context =
-                {throughputPredictor->PredictThroughputMbps(), bufferSeconds, _bufferedBitrateIDs, *viewPredictor};
+            const MultiviewABRControllerContext context = {
+                throughputPredictor->PredictThroughputMbps(), bufferSeconds,
+                lastBitrateIDs, _bufferedBitrateIDs, *viewPredictor
+            };
             const auto action = controller->GetControlAction(context);
             const auto groupID = beginGroupID + action.GroupID + static_cast<int>(endGroupID > beginGroupID);
 

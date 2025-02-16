@@ -31,6 +31,7 @@ export {
 export struct MultiviewABRControllerContext {
     double ThroughputMbps; ///< The predicted throughput in megabits per second.
     double BufferSeconds; ///< The buffer level in seconds.
+    span<const int> LastBitrateIDs; ///< The bitrate IDs of the last segment group.
     mdspan<const int, dims<2>> BufferedBitrateIDs; ///< The bitrate IDs of buffered segments.
     const IViewPredictor &ViewPredictor; ///< The view predictor.
 };
@@ -82,7 +83,6 @@ protected:
             const auto scaledBitrateMbps = min(_primaryViewSize * bitrateMbps / _secondaryViewSize, maxBitrateMbps);
             return _secondaryViewSize * PrimaryUtility(scaledBitrateMbps);
         }) | ranges::to<vector>();
-        _weightedPrimaryUtilities *= _segmentSeconds, _weightedSecondaryUtilities *= _segmentSeconds;
     }
 
     [[nodiscard]] int GetBitrateIDBelow(double bitrateMbps) const {
