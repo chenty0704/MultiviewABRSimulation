@@ -18,6 +18,9 @@ TEST(ThroughputBasedControllerTest, BasicControl) {
     context.ThroughputMbps = 5.;
     EXPECT_EQ(controller.GetControlAction(context).BitrateIDs, vector({1, 0, 0, 0}));
 
+    context.ThroughputMbps = 10.;
+    EXPECT_EQ(controller.GetControlAction(context).BitrateIDs, vector({2, 0, 0, 0}));
+
     context.ThroughputMbps = 15.;
     EXPECT_EQ(controller.GetControlAction(context).BitrateIDs, vector({3, 0, 0, 0}));
 }
