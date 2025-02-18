@@ -30,15 +30,16 @@ public:
         BaseMultiviewABRController(streamingConfig, options) {
     }
 
-    [[nodiscard]] ControlAction GetControlAction(const MultiviewABRControllerContext &context) const override {
+    [[nodiscard]] ControlAction GetControlAction(const MultiviewABRControllerContext &context) override {
         const auto throughputMbps = context.ThroughputMbps * _throughputDiscount;
+        const auto bufferedGroupCount = static_cast<int>(context.BufferedBitrateIDs.extent(0));
         const auto distribution = context.ViewPredictor.PredictPrimaryStreamDistribution(
             context.BufferSeconds, _segmentSeconds);
 
-        vector<int> bitrateIDs(_streamCount);
+        vector bitrateIDs(_streamCount, 0);
         auto totalBitrateMbps = _bitratesMbps.front() * _streamCount;
         auto derivatives = views::iota(0, _streamCount) | views::transform([&](int streamID) {
-            return GetDerivative(bitrateIDs[streamID], distribution[streamID]);
+            return ExpectedUtilityDerivative(bitrateIDs[streamID], distribution[streamID]);
         }) | ranges::to<vector>();
         while (true) {
             const auto streamID = static_cast<int>(ranges::max_element(derivatives) - derivatives.cbegin());
@@ -47,13 +48,13 @@ public:
             totalBitrateMbps += _bitratesMbps[bitrateIDs[streamID] + 1] - _bitratesMbps[bitrateIDs[streamID]];
             if (totalBitrateMbps > throughputMbps) break;
 
-            derivatives[streamID] = GetDerivative(++bitrateIDs[streamID], distribution[streamID]);
+            derivatives[streamID] = ExpectedUtilityDerivative(++bitrateIDs[streamID], distribution[streamID]);
         }
-        return {static_cast<int>(context.BufferedBitrateIDs.extent(0)), bitrateIDs};
+        return {bufferedGroupCount, bitrateIDs};
     }
 
 private:
-    [[nodiscard]] double GetDerivative(int bitrateID, double probability) const {
+    [[nodiscard]] double ExpectedUtilityDerivative(int bitrateID, double probability) const {
         if (bitrateID == _bitratesMbps.size() - 1) return 0.;
 
         const auto weightedPrimaryUtilityDiff =

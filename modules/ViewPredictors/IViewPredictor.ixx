@@ -24,7 +24,7 @@ export class IViewPredictor {
 public:
     virtual ~IViewPredictor() = default;
 
-    /// Updates the view predictor with the latest view information.
+    /// Updates the view predictor with the latest primary stream IDs.
     /// @param primaryStreamIDs A list of primary stream IDs.
     virtual void Update(span<const int64_t> primaryStreamIDs) = 0;
 

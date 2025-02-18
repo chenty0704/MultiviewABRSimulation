@@ -1,6 +1,6 @@
 BeginPackage["MultiviewABRSimulation`", {"LibraryLinkUtilities`", "Utilities`"}];
 
-MultiviewABRSimulate::usage = UsageString@"MultiviewABRSimulate[streamingConfig, controller, {networkData, primaryStreamData}] simulates a multiview adaptive bitrate streaming configuration on a collection of network series and primary stream series.";
+MultiviewABRSimulate::usage = UsageString@"MultiviewABRSimulate[`streamingConfig`, `controller`, {`networkData`, `primaryStreamData`}] simulates a multiview adaptive bitrate streaming configuration on a collection of network series and primary stream series.";
 
 Begin["`Private`"];
 
