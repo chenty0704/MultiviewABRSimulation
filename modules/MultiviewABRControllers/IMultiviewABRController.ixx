@@ -85,12 +85,12 @@ protected:
         }) | ranges::to<vector>();
     }
 
-    [[nodiscard]] int GetBitrateIDBelow(double bitrateMbps) const {
+    [[nodiscard]] int BitrateIDBelow(double bitrateMbps) const {
         const auto it = ranges::upper_bound(_bitratesMbps, bitrateMbps);
         return it != _bitratesMbps.cbegin() ? static_cast<int>(it - _bitratesMbps.cbegin()) - 1 : 0;
     }
 
-    [[nodiscard]] int GetBitrateIDAbove(double bitrateMbps) const {
+    [[nodiscard]] int BitrateIDAbove(double bitrateMbps) const {
         const auto it = ranges::lower_bound(_bitratesMbps, bitrateMbps);
         return it != _bitratesMbps.cend()
                    ? static_cast<int>(it - _bitratesMbps.cbegin())

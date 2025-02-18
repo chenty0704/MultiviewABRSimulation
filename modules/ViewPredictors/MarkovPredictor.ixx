@@ -70,12 +70,12 @@ public:
             return Math::Exp(-totalRate * (offsetSeconds + groupID * segmentSeconds));
         }) | ranges::to<vector>();
         for (auto groupID = 0; groupID < groupCount; ++groupID) {
+            const span distribution(&distributions[groupID, 0], _streamCount);
             const auto diffValue = (expValues[groupID] - expValues[groupID + 1]) / (totalRate * segmentSeconds);
             for (auto streamID = 0; streamID < _streamCount; ++streamID)
-                distributions[groupID, streamID] =
-                    streamID != prevPrimaryStreamID
-                        ? relRates[streamID] - relRates[streamID] * diffValue
-                        : relRates[streamID] + (1 - relRates[streamID]) * diffValue;
+                distribution[streamID] = streamID != prevPrimaryStreamID
+                                             ? relRates[streamID] - relRates[streamID] * diffValue
+                                             : relRates[streamID] + (1 - relRates[streamID]) * diffValue;
         }
         return distributions;
     }
