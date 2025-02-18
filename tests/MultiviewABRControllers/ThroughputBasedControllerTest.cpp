@@ -12,7 +12,7 @@ using namespace std;
 TEST(ThroughputBasedControllerTest, BasicControl) {
     const StreamingConfig streamingConfig = {1., {1., 2., 4., 8.}, 4, 0.75, 5.};
     const StaticPredictor predictor(4, 1.);
-    const ThroughputBasedController controller(streamingConfig);
+    ThroughputBasedController controller(streamingConfig);
 
     MultiviewABRControllerContext context = {.ViewPredictor = predictor};
     context.ThroughputMbps = 5.;

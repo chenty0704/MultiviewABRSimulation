@@ -31,7 +31,6 @@ export {
 export struct MultiviewABRControllerContext {
     double ThroughputMbps; ///< The predicted throughput in megabits per second.
     double BufferSeconds; ///< The buffer level in seconds.
-    span<const int> LastBitrateIDs; ///< The bitrate IDs of the last segment group.
     mdspan<const int, dims<2>> BufferedBitrateIDs; ///< The bitrate IDs of buffered segments.
     const IViewPredictor &ViewPredictor; ///< The view predictor.
 };
@@ -50,7 +49,7 @@ public:
     /// Gets the control action given the specified context.
     /// @param context The context for the multiview adaptive bitrate controller.
     /// @returns The control action given the specified context.
-    [[nodiscard]] virtual ControlAction GetControlAction(const MultiviewABRControllerContext &context) const = 0;
+    [[nodiscard]] virtual ControlAction GetControlAction(const MultiviewABRControllerContext &context) = 0;
 };
 
 /// Provides a skeletal implementation of a multiview adaptive bitrate controller.
@@ -85,12 +84,12 @@ protected:
         }) | ranges::to<vector>();
     }
 
-    [[nodiscard]] int GetBitrateIDBelow(double bitrateMbps) const {
+    [[nodiscard]] int BitrateIDBelow(double bitrateMbps) const {
         const auto it = ranges::upper_bound(_bitratesMbps, bitrateMbps);
         return it != _bitratesMbps.cbegin() ? static_cast<int>(it - _bitratesMbps.cbegin()) - 1 : 0;
     }
 
-    [[nodiscard]] int GetBitrateIDAbove(double bitrateMbps) const {
+    [[nodiscard]] int BitrateIDAbove(double bitrateMbps) const {
         const auto it = ranges::lower_bound(_bitratesMbps, bitrateMbps);
         return it != _bitratesMbps.cend()
                    ? static_cast<int>(it - _bitratesMbps.cbegin())
