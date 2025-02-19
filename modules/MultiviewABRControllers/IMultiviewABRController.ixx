@@ -39,6 +39,14 @@ export struct MultiviewABRControllerContext {
 export struct ControlAction {
     int GroupID; ///< The index of the segment group to download or upgrade.
     vector<int> BitrateIDs; ///< The bitrate IDs for the segment group.
+
+    bool operator==(const ControlAction &) const = default;
+    bool operator!=(const ControlAction &) const = default;
+
+    friend ostream &operator<<(ostream &stream, const ControlAction &action) {
+        print(stream, "{{GroupID: {}, BitrateIDs: {}}}", action.GroupID, action.BitrateIDs);
+        return stream;
+    }
 };
 
 /// Defines the interface of a multiview adaptive bitrate controller.
